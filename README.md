@@ -68,7 +68,7 @@ Build the server and run:
 ```shell
 cargo build --release
 
-./target/release/zt-tcp-relay 0.0.0.0:443
+./target/release/zt-tcp-relay --listen 0.0.0.0:443
 ```
 
 You can specify logging level with `RUST_LOG` environment variable:
