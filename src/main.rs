@@ -11,6 +11,7 @@ extern crate env_logger;
 #[macro_use]
 extern crate clap;
 use clap::App;
+use env_logger::TimestampPrecision;
 
 mod greeting;
 mod packet;
@@ -203,7 +204,7 @@ fn start_udp_listener(
 fn init_logger() {
     let env = env_logger::Env::default();
     let mut builder = env_logger::Builder::from_env(env);
-    builder.default_format_timestamp_nanos(true);
+    builder.format_timestamp(Some(TimestampPrecision::Nanos));
     builder.init();
 }
 
