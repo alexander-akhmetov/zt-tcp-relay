@@ -61,6 +61,31 @@ Build docker container:
 docker build . -f Dockerfile -t zerotier-tcp-relay
 ```
 
+## Configure zerotier-one to use your proxy
+
+1. You need to start the proxy with a different address from 127.0.0.1,
+   so that clients from other machines can connect: `zt-tcp-relay -l '[::]:4443'`
+2. Replace `192.0.2.0` with the public ip address of your machine running the proxy in `/var/lib/zerotier-one/local.conf`:
+
+```json
+{
+  "settings": {
+    "forceTcpRelay": true,
+    "tcpFallbackRelay": "192.0.2.0/4443"
+  }
+}
+```
+
+Troubleshooting: Make sure you can connect from the other host to your proxy.
+
+Here we use the Netcat program to establish a connection to the proxy:
+
+```console
+$ nc -v <yourip> 4443
+Connection to v <yourip> 4443 port succeeded!
+```
+
+
 ## Command line usage
 
 Build the server and run:
