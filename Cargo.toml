@@ -1,8 +1,8 @@
 [package]
 name = "zt-tcp-relay"
-version = "0.1.0"
-authors = ["Alexander Akhmetov <me@aleks.sh>"]
-edition = "2018"
+version = "0.2.0"
+authors = ["Alexander Akhmetov <me@alx.cx>"]
+edition = "2024"
 license = "MIT"
 
 [dependencies]

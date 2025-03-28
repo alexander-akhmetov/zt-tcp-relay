@@ -16,8 +16,8 @@ use env_logger::TimestampPrecision;
 mod greeting;
 mod packet;
 
-static UDP_BIND_ADDR: &'static str = "0.0.0.0:0";
-static DEFAULT_TCP_BIND_ADDR: &'static str = "127.0.0.1:4443";
+static UDP_BIND_ADDR: &str = "0.0.0.0:0";
+static DEFAULT_TCP_BIND_ADDR: &str = "127.0.0.1:4443";
 const DEFAULT_MAX_CONN: u16 = 128;
 const READ_BUFFER_SIZE: usize = 131_072;
 
@@ -153,7 +153,11 @@ fn start_tcp_listener(
                     peer_addr, dest_addr, received
                 );
 
-                udp_socket.send_to(&buffer[12..(12 + payload_length)], dest_addr);
+                if let Err(e) = udp_socket.send_to(&buffer[12..(12 + payload_length)], dest_addr) {
+                    error!("[me => UDP {}] Failed to send packet: {}", dest_addr, e);
+                    (*running).store(false, atomic::Ordering::Release);
+                    return;
+                }
                 debug!("[me => UDP {}] sent packet", dest_addr);
             }
             Err(ref e) if e.kind() == ErrorKind::TimedOut || e.kind() == ErrorKind::WouldBlock => {}
@@ -186,9 +190,24 @@ fn start_udp_listener(
 
                 packet::packet_header(&src_addr, received, &mut header_bytes);
 
-                tcp_stream.write(&header_bytes);
-                tcp_stream.write(&buffer[0..received]);
-                tcp_stream.flush();
+                // Handle all three write operations, exit the thread if any of them fail
+                if let Err(e) = tcp_stream.write(&header_bytes) {
+                    error!("[me => TCP {}] Failed to write header: {}", peer_addr, e);
+                    (*running).store(false, atomic::Ordering::Release);
+                    return;
+                }
+                
+                if let Err(e) = tcp_stream.write(&buffer[0..received]) {
+                    error!("[me => TCP {}] Failed to write payload: {}", peer_addr, e);
+                    (*running).store(false, atomic::Ordering::Release);
+                    return;
+                }
+                
+                if let Err(e) = tcp_stream.flush() {
+                    error!("[me => TCP {}] Failed to flush: {}", peer_addr, e);
+                    (*running).store(false, atomic::Ordering::Release);
+                    return;
+                }
 
                 debug!("[me => TCP {}] sent data from {}/UDP", peer_addr, src_addr,);
             }
