@@ -1,4 +1,4 @@
-FROM rust:1.34-slim-stretch as builder
+FROM rust:1.87-slim-bookworm as builder
 
 WORKDIR /usr/src/zt-tcp-relay
 COPY . .
@@ -6,7 +6,7 @@ RUN cargo build --release
 
 
 
-FROM debian:stretch-slim
+FROM debian:bookworm-slim
 
 COPY --from=builder /usr/src/zt-tcp-relay/target/release/zt-tcp-relay /app/zt-tcp-relay
 RUN chmod +x /app/zt-tcp-relay
