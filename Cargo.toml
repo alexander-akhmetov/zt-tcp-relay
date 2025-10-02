@@ -4,8 +4,12 @@ version = "0.2.0"
 authors = ["Alexander Akhmetov <me@alx.cx>"]
 edition = "2024"
 license = "MIT"
+description = "TCP fallback proxy server for ZeroTier nodes"
+repository = "https://github.com/alexander-akhmetov/zt-tcp-relay"
+keywords = ["zerotier", "tcp", "proxy", "relay", "networking"]
+categories = ["network-programming"]
 
 [dependencies]
 log = "0.4"
 env_logger = "0.11.8"
-clap = "2.33.3"
+clap = { version = "4.5", features = ["derive"] }

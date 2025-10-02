@@ -8,9 +8,7 @@ use std::time::Duration;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-#[macro_use]
-extern crate clap;
-use clap::App;
+use clap::Parser;
 use env_logger::TimestampPrecision;
 
 mod greeting;
@@ -196,13 +194,13 @@ fn start_udp_listener(
                     (*running).store(false, atomic::Ordering::Release);
                     return;
                 }
-                
+
                 if let Err(e) = tcp_stream.write(&buffer[0..received]) {
                     error!("[me => TCP {}] Failed to write payload: {}", peer_addr, e);
                     (*running).store(false, atomic::Ordering::Release);
                     return;
                 }
-                
+
                 if let Err(e) = tcp_stream.flush() {
                     error!("[me => TCP {}] Failed to flush: {}", peer_addr, e);
                     (*running).store(false, atomic::Ordering::Release);
@@ -227,19 +225,24 @@ fn init_logger() {
     builder.init();
 }
 
+#[derive(Parser)]
+#[command(name = "ZeroTier TCP proxy")]
+struct Args {
+    /// Maximum number of connections
+    #[arg(short = 'c', long = "max-conn", default_value_t = DEFAULT_MAX_CONN)]
+    max_conn: u16,
+
+    /// Address to listen, default: 127.0.0.1:4443
+    #[arg(short = 'l', long = "listen", default_value = DEFAULT_TCP_BIND_ADDR)]
+    listen: SocketAddr,
+}
+
 fn main() {
     init_logger();
 
-    let matches = App::new("ZeroTier TCP proxy")
-        .args_from_usage(
-            "-c --max-conn [max-conn] 'Maximum number of connections'
-            -l --listen [listen] 'Address to listen, default: 127.0.0.1:4443'",
-        )
-        .get_matches();
-
-    let tcp_listen_addr: SocketAddr = value_t!(matches, "listen", SocketAddr)
-        .unwrap_or_else(|_| DEFAULT_TCP_BIND_ADDR.parse().unwrap());
-    let max_conn = value_t!(matches, "max-conn", u16).unwrap_or(DEFAULT_MAX_CONN);
+    let args = Args::parse();
+    let tcp_listen_addr = args.listen;
+    let max_conn = args.max_conn;
     let listener = TcpListener::bind(tcp_listen_addr).unwrap();
     let conn_count = Arc::new(Mutex::new(0));
 
